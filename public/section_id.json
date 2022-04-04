@@ -1,0 +1,7 @@
+[
+  { "name": "default", "active": true, "format": "Default" },
+  { "name": "OPD Ortho", "active": true, "format": "HistoryAndPhysical" },
+  { "name": "OPD Med", "active": true, "format": "HistoryAndPhysical" },
+  { "name": "OR", "active": true, "format": "OperativeNote" },
+  { "name": "not use", "active": false, "format": "OperativeNote" }
+]

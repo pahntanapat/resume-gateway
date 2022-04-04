@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Get a Free Trial - Resume&trade; - Medical Voice to Clinical Summarized Text</title>
+    <script src="https://www.google.com/recaptcha/api.js?render=6LfxnRgcAAAAALOL_AyDbFBm94K5VtcZMsbs5mMs"></script>
+    <link rel="stylesheet" type="text/css" href="./css/semantic.min.css" />
+    <script src="./js/vue.min.js"></script>
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/semantic.min.js"></script>
+</head>
+
+<body>
+    <div class="ui centered grid" id="app">
+        <div class="column six wide desktop twelve wide mobile">
+            <h1 class="header center aligned">Input information to Try Resume&trade; demo</h1>
+            <h3 class="header center aligned">SATI&trade; Resume&trade; - Medical Voice to Clinical Summarized Text</h3>
+            <form action="./login" method="POST" id="loginForm" class="ui large form segment"
+                @submit.prevent="formSubmit">
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input type="text" name="email" inputmode="email" placeholder="Email" required>
+                </div>
+                <div class="field">
+                    <label for="phone">Phone</label>
+                    <input type="text" name="phone" inputmode="tel" placeholder="Phone" required>
+                </div>
+                <div v-if="reg">
+                    <div class="field">
+                        <label for="name">Full name</label>
+                        <input type="text" name="name" placeholder="Full name" required>
+                    </div>
+                    <div class="two fields">
+                        <div class="field">
+                            <label for="organization">Organization</label>
+                            <input type="text" name="organization" placeholder="Your organization">
+                        </div>
+                        <div class="field">
+                            <label for="position">Position</label>
+                            <input type="text" name="position" placeholder="Password">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="ui checkbox">
+                            <input type="checkbox" name="subscription" value="1">
+                            <label for="subscription">Recieve more information about <a href="https://sati.co.th"
+                                    target="_blank">Resume&trade;</a></label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="ui checkbox">
+                            <input type="checkbox" name="terms" required>
+                            <label for="accept">Accept Resume&trade; Demo Trial <a href="#show-term"
+                                    @click="showTerm">Term of
+                                    Usage</a></label>
+                        </div>
+                    </div>
+                </div><br>
+                <div class="ui field">
+                    <input type="hidden" name="token" id="token" value="">
+                    <button type="submit" class="ui button green">Try demo</button>
+                </div>
+                <div class="ui negative message" v-if="msg && msg.length">
+                    <ul class="ui list">
+                        <li v-for="i in msg">{{i}}</li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+    </div>
+    <div class="ui modal" id="term">
+        <h1 class="header">Accept Resume&trade; Demo Trial Term of Usage (Sep, 1st, 2021)</h1>
+        <div class="content">
+            <ol>
+                <li>I allow Resume&trade; (&quot;Resume&quot;) to Collect my personal data (&quot;data&quot;) - full
+                    name,
+                    email address, phone, organization, position, IP address, registation time, demo time and duration,
+                    everytime when I use Resume.
+                </li>
+                <li>I allow Resume to use or give my data to third parties for business or marketing purpose</li>
+                <li>I accept to keep my data on third parties&apos; storage services. I will not sue or ask Resume any
+                    charges for leaking or losing of my data.</li>
+            </ol>
+        </div>
+        <div class="actions">
+            <div class="ui button cancel">Hide</div>
+        </div>
+    </div>
+    <script>
+        const EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        const PHONE_REGEX = /^[+]?[0-9]+.*/;
+        var app = new Vue({
+            el: '#app',
+            data: {
+                reg: false,
+                msg: []
+            },
+            methods: {
+                showTerm: function () {
+                    $('#term').modal('show');
+                },
+                formSubmit: function () {
+                    this.msg = [];
+                    $('input[type=text]').each(function () { $(this).val($(this).val().trim()); })
+                    //$('input[name=email]').val($('input[name=email]').val().trim());
+                    if ($('input[name=email]').val().length <= 0) {
+                        this.msg.push('Please input email.');
+                    }
+                    else if (!EMAIL_REGEX.test($('input[name=email]').val())) {
+                        this.msg.push('Please input corrected email format.');
+                    }
+
+                    //$('input[name=phone]').val($('input[name=phone]').val().trim());
+                    if ($('input[name=phone]').val().length <= 0) {
+                        this.msg.push('Please input phone.');
+                    }
+                    else if (!PHONE_REGEX.test($('input[name=phone]').val())) {
+                        this.msg.push('Please input corrected phone format.');
+                    }
+                    if (this.reg) {
+                        if ($('input[name=name]').val().length <= 0) {
+                            this.msg.push('Please input your full name.');
+                        }
+                    }
+
+                    if (this.msg.length <= 0) {
+                        grecaptcha.ready(function () {
+                            grecaptcha.execute('6LfxnRgcAAAAALOL_AyDbFBm94K5VtcZMsbs5mMs', { action: 'login' }).then(function (token) {
+                                $("#token").val(token);
+                                console.log($('#loginForm').serialize());
+                                $.post(
+                                    app.reg ? "/register" : "/login",
+                                    $('#loginForm').serialize()
+                                ).then(app.postCallback);
+                                // Add your logic to submit to your backend server here.
+                            });
+                        });
+                    } else {
+                        console.log(this.msg);
+                    }
+
+                },
+                postCallback: function (json) {
+                    if (!json) return;
+                    this.msg = [json.msg] || null;
+                    this.reg = json.reg;
+                    if (json.login) {
+                        setTimeout(() => { window.location.href = "/"; }, 1000);
+                    }
+                }
+            },
+            mounted: function () {
+            }
+        });
+    </script>
+</body>
+
+</html>

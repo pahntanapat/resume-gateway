@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Resume&trade; - Dictation mode: write what you say</title>
+    <script src="./js/vue.min.js"></script>
+    <script src="./js/jquery.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./js/semantic.min.js"></script>
+    <script src="/resume/Resume.js"></script>
+    <script src="./js/UserLimit.js"></script>
+    <link rel="stylesheet" type="text/css" href="./css/semantic.min.css" />
+    <link rel="stylesheet" type="text/css" href="./css/index.css" />
+</head>
+
+<body>
+    <div id="app" class="ui container">
+        <header class="ui center aligned header">
+            <div v-if="showRecorder">
+                <h1>Recorder for HN: {{ HN }}</h1>
+                <h3>TXN: {{TXN}} Section: {{sectionList[sectionID]?sectionList[sectionID].name:''}} ({{sectionID}})</h3>
+                <button class="ui yellow button" @click="changeHN" v-bind:class="{disabled : isRecording}">Change
+                    HN</button>
+            </div>
+            <div v-else>
+                <h1><i class="user md icon"></i>Resume: Speech to text assistant</h1>
+                <h2>Simple Dictation form</h2>
+            </div>
+        </header>
+        <div>
+            <div class="ui segments">
+                <div class="ui segment" v-if="!showRecorder" id="HN_input">
+                    <div class="ui massive fluid action left labeled input">
+                        <div class="ui label"><i class="ui sitemap icon"></i> Section</div>
+                        <input class="ui" v-model="sectionList[sectionID].name" readonly>
+                    </div>
+                    <div class="ui massive fluid action left icon input">
+                        <i class="address card icon"></i>
+                        <input autofocus autocomplete="off" placeholder="HN..." min="0" step="1" type="number"
+                            v-model="inputHN" pattern="\d*" @keyup.enter="submitHN" />
+                        <button @click="submitHN" class="ui green button">Proceed</button>
+                    </div>
+                </div>
+                <div class="ui segment" v-else>
+                    <div class="ui segment">
+                        <div class="ui massive action fluid left labeled input">
+                            <div v-bind:class="recordBtnClass" class="ui label">
+                                <i class="icon" v-bind:class="{'microphone': isRecording}"></i>
+                                {{ btnRecordValue }}
+                            </div>
+                            <div class="ui force-hide"><button class="ui huge labeled red icon button"
+                                    v-if="(isRecording && interval)" @click="stopRecord"><i class="stop icon"></i> End
+                                    session (For debug ONLY!) </button></div>
+
+                        </div>
+                        <div class="ui">
+                            <br><b id="usedTime"></b>
+                        </div>
+                    </div>
+
+
+
+                    <div class="ui form">
+                        <div class="field">
+                            <div class="ui massive fluid labeled input">
+                                <div class="ui label">Procedure</div>
+                                <input autofocus autocomplete="off" placeholder="Surgical Procedure"
+                                    @keyup.enter="submitHN" name="operative_note_surgical_procedure_section"
+                                    id="operative_note_surgical_procedure_section" class="fluid"
+                                    v-model="operative_note_surgical_procedure_section" />
+                                <button @click="dictate('operative_note_surgical_procedure_section')"
+                                    class="ui black button icon"><i class="icon" class="icon"
+                                        :class="dictateClass('operative_note_surgical_procedure_section')"></i></button>
+                            </div>
+                            <div>
+                                <div class="ui label" v-for="i in r_operative_note_surgical_procedure_section"
+                                    @click="appendSuggest('operative_note_surgical_procedure_section',i)">{{i}}</div>
+                                <div class="lds-facebook" v-if="hasActiveResumeSession">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Procedure findings</label>
+                            <div class="ui corner labeled input">
+                                <textarea v-model="procedure_findings_section"></textarea>
+                                <div class="ui label corner icon black" @click="dictate('procedure_findings_section')">
+                                    <i class="icon" :class="dictateClass('procedure_findings_section')"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="ui label" v-for="i in r_procedure_findings_section"
+                                    @click="appendSuggest('procedure_findings_section',i)">{{i}}</div>
+                                    <div class="lds-facebook" v-if="hasActiveResumeSession"><div></div><div></div><div></div></div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Procedure description</label>
+                            <div class="ui corner labeled input">
+                                <textarea v-model="procedure_description_section"></textarea>
+                                <div class="ui label corner icon black"
+                                    @click="dictate('procedure_description_section')"><i class="icon"
+                                        :class="dictateClass('procedure_description_section')"></i></div>
+                            </div>
+                            <div>
+                                <div class="ui label" v-for="i in r_procedure_description_section"
+                                    @click="appendSuggest('procedure_description_section',i)">{{i}}</div>
+                                <div class="lds-facebook" v-if="hasActiveResumeSession">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <h3><i class="dot circle icon"></i>More form ...</h3>
+                    </div>
+                </div>
+                <div class="ui segment">
+                    <div class="ui styled fluid accordion">
+                        <div class="title active">
+                            <i class="dropdown icon"></i> Previous Recordings
+                        </div>
+                        <div class="content active">
+                            <p class="transition hidden">
+                            <div class="ui tiny message" v-if="history">
+                                <ol class="ui divided selection items">
+                                    <li v-for="value in history">
+                                        <a class="item">
+                                            <div class="ui teal horizontal label">UID
+                                                <div class="detail">
+                                                    {{ value.session_id }}</div>
+                                            </div>
+                                            <div class="ui blue horizontal label">HN
+                                                <div class="detail">
+                                                    {{ value.identifier.HN }}</div>
+                                            </div>
+                                            <div class="middle aligned content">
+                                                <audio class="left" :src="value.url" controls playsinline></audio>
+                                            </div>
+                                        </a>
+                                    </li>
+
+                                </ol>
+                            </div>
+
+                            </p>
+                        </div>
+                        <div class="title active">
+                            <i class="dropdown icon"></i> Logs
+                        </div>
+                        <div class="content active">
+                            <p class="transition hidden">
+                            <div class="ui tiny message">
+                                <div class="header">
+                                    Event Logs
+                                </div>
+                                <ul class="list">
+                                    <div id="log" style="max-height: 250px; overflow:scroll;"></div>
+                                </ul>
+                            </div>
+                            </p>
+                        </div>
+                        <!-- <div class="title">
+                            <i class="dropdown icon"></i> Filelists
+                        </div>
+                        <div class="content">
+                            <p class="transition hidden">
+                            <div>
+                                <li style="font-size: 1rem" v-for="i in srvfilelist">{{ i }}</li>
+                            </div>
+                            </p>
+                        </div> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ui">
+        <i class="close icon"></i>
+        <div class="header"><i class="ui icon microphone"></i>Please Choose Mode</div>
+        <div class="action">
+            <button class="ui button">Conversation: write summary of your dialog</button>
+            <button class="ui button">Dictation: type what only one person say</button>
+        </div>
+    </div>
+    <script src="/resume/RecordRTC.min.js"></script>
+    <script src="./js/dict.js"></script>
+</body>
+
+</html>
