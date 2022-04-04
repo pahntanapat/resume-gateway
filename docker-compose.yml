@@ -1,0 +1,15 @@
+version: "3.6"
+
+services:
+  resume-demo:
+    image: resume-demo
+    build:
+      context: .
+      target: resume-demo
+    environment:
+      NODE_ENV: development
+      CREDENTIALS_FILE: credentials.json
+      PUBLIC_DEMO: 0
+      HTTP: 1
+    ports: # Inbound port bindings
+      - 80:80
